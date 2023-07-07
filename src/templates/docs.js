@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
-import Helmet from 'react-helmet';
 import { graphql } from 'gatsby';
-import MDXRenderer from 'gatsby-plugin-mdx/mdx-renderer';
 
 import { Layout, Link } from '$components';
 import NextPrevious from '../components/NextPrevious';
@@ -12,10 +10,10 @@ const forcedNavOrder = config.sidebar.forcedNavOrder;
 
 export default class MDXRuntimeTest extends Component {
   render() {
-    const { data } = this.props;
+    const { data, children } = this.props;
 
     if (!data) {
-      return this.props.children;
+      return children;
     }
     const {
       allMdx,
@@ -64,10 +62,6 @@ export default class MDXRuntimeTest extends Component {
         }
       });
 
-    // meta tags
-    const metaTitle = mdx.frontmatter.metaTitle;
-
-    const metaDescription = mdx.frontmatter.metaDescription;
 
     let canonicalUrl = config.gatsby.siteUrl;
 
@@ -77,18 +71,6 @@ export default class MDXRuntimeTest extends Component {
 
     return (
       <Layout {...this.props}>
-        <Helmet>
-          {metaTitle ? <title>{metaTitle}</title> : null}
-          {metaTitle ? <meta name="title" content={metaTitle} /> : null}
-          {metaDescription ? <meta name="description" content={metaDescription} /> : null}
-          {metaTitle ? <meta property="og:title" content={metaTitle} /> : null}
-          {metaDescription ? <meta property="og:description" content={metaDescription} /> : null}
-          {metaTitle ? <meta property="twitter:title" content={metaTitle} /> : null}
-          {metaDescription ? (
-            <meta property="twitter:description" content={metaDescription} />
-          ) : null}
-          <link rel="canonical" href={canonicalUrl} />
-        </Helmet>
         <div className={'titleWrapper'}>
           <StyledHeading>{mdx.fields.title}</StyledHeading>
           <Edit className={'mobileView'}>
@@ -100,7 +82,7 @@ export default class MDXRuntimeTest extends Component {
           </Edit>
         </div>
         <StyledMainWrapper>
-          <MDXRenderer>{mdx.body}</MDXRenderer>
+          {children}
         </StyledMainWrapper>
         <div className={'addPaddTopBottom'}>
           <NextPrevious mdx={mdx} nav={nav} />
@@ -108,6 +90,37 @@ export default class MDXRuntimeTest extends Component {
       </Layout>
     );
   }
+}
+
+export const Head = ({data}) => {
+
+  const {
+    mdx,
+    site: {
+      siteMetadata: {},
+    },
+  } = data;
+
+  // meta tags
+  const metaTitle = mdx.frontmatter.metaTitle;
+  const metaDescription = mdx.frontmatter.metaDescription;
+
+  let canonicalUrl = config.gatsby.siteUrl;
+
+  canonicalUrl =
+    config.gatsby.pathPrefix !== '/' ? canonicalUrl + config.gatsby.pathPrefix : canonicalUrl;
+  canonicalUrl = canonicalUrl + mdx.fields.slug;
+
+  return (
+    <>
+      {metaTitle ? <title>{metaTitle}</title> : null}
+      {metaTitle ? <meta name="title" content={metaTitle} /> : null}
+      {metaDescription ? <meta name="description" content={metaDescription} /> : null}
+      {metaTitle ? <meta property="og:title" content={metaTitle} /> : null}
+      {metaDescription ? <meta property="og:description" content={metaDescription} /> : null}
+      <link rel="canonical" href={canonicalUrl} />
+    </>
+  )
 }
 
 export const pageQuery = graphql`
@@ -124,7 +137,6 @@ export const pageQuery = graphql`
         title
         slug
       }
-      body
       tableOfContents
       parent {
         ... on File {
